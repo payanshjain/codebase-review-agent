@@ -1,87 +1,110 @@
-# Codebase Q&A RAG (MVP)
+# Codebase Q&A RAG Agent
 
-A beginner-friendly, production-style MVP for asking grounded questions about a local code repository.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Groq API](https://img.shields.io/badge/LLM-Groq-orange.svg)](https://groq.com)
+[![ChromaDB](https://img.shields.io/badge/Vector%20DB-Chroma-green.svg)](https://www.trychroma.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Stack (Path B — free-friendly)
+A powerful, production-style Retrieval-Augmented Generation (RAG) agent for your local codebase. This API allows you to index a local repository, ask grounded questions about its architecture, and run automated AI code reviews.
 
-| Component | Provider | Cost |
+---
+
+## 🚀 Features
+
+- **Local Code Indexing**: Automatically parses, chunks, and embeds local code repositories.
+- **Hybrid Retrieval System**: Combines Vector Search (Semantic) and BM25 (Keyword) using Reciprocal Rank Fusion (RRF) for highly accurate context retrieval.
+- **AI Code Reviewer**: Run automated code reviews to detect bugs, security issues, and get refactoring suggestions.
+- **Cost-Effective Stack**: Uses free local embeddings via HuggingFace and fast, free-tier LLM inference via the Groq API.
+
+## 🛠️ Tech Stack
+
+| Component | Technology | Cost |
 |-----------|----------|------|
-| **Embeddings** | HuggingFace local (`BAAI/bge-small-en-v1.5`) | Free (runs on CPU) |
-| **Answers** | Groq API (`llama-3.1-8b-instant`) | Free tier at [console.groq.com](https://console.groq.com) |
-| **Vector DB** | ChromaDB (local disk) | Free |
+| **Embeddings** | HuggingFace local (`BAAI/bge-small-en-v1.5`) | Free (Runs locally on CPU) |
+| **LLM Inference** | Groq API (`llama-3.1-8b-instant`) | Free tier at [console.groq.com](https://console.groq.com) |
+| **Vector DB** | ChromaDB (Local Disk) | Free |
+| **Framework** | FastAPI + Uvicorn | Free |
 
-## Project Structure
+## 📁 Project Structure
 
 ```text
 codebase-qa-rag/
 ├─ app/
-│  ├─ api/
-│  │  └─ routes.py
-│  ├─ core/
-│  │  ├─ config.py
-│  │  ├─ providers.py
-│  │  └─ provider_errors.py
-│  ├─ ingestion/
-│  ├─ index/
-│  ├─ retrieval/
-│  ├─ qa/
-│  ├─ schemas/
-│  └─ main.py
-├─ data/chroma/
-├─ .env.example
-├─ requirements.txt
-└─ run.py
+│  ├─ api/          # API Routes (FastAPI)
+│  ├─ core/         # Configuration & LLM/Embedding Providers
+│  ├─ index/        # Vector Store Indexing Logic
+│  ├─ ingestion/    # Code Parsing & Chunking
+│  ├─ qa/           # Question-Answering Generation
+│  ├─ retrieval/    # Hybrid Search (Vector + BM25)
+│  ├─ review/       # AI Code Review Tools
+│  └─ schemas/      # Pydantic Data Models
+├─ data/            # Local DB Storage (ChromaDB & BM25 Docstore)
+├─ scripts/         # Utility scripts
+├─ .env.example     # Environment variable template
+├─ requirements.txt # Python dependencies
+└─ run.py           # Application Entry Point
 ```
 
-## Local Setup
+## 💻 Getting Started
 
-1. Create and activate a virtual environment.
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   First install downloads PyTorch + sentence-transformers (~1–2 GB). This is normal.
-3. Get a **free Groq API key**: [https://console.groq.com/keys](https://console.groq.com/keys)
-4. Copy env template and add your key:
-   ```bash
-   copy .env.example .env
-   ```
-   Edit `.env` and set `GROQ_API_KEY=gsk_...`
-5. Run server:
-   ```bash
-   python run.py
-   ```
-6. Open docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+### 1. Prerequisites
+- Python 3.10 or higher
+- A [free Groq API Key](https://console.groq.com/keys)
 
-## End-to-end test
+### 2. Local Setup
 
-**Step 1 — Index a repo** (`POST /index`)
+Clone the repository and navigate to the project directory:
 
+```bash
+# 1. Create and activate a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+
+# 2. Install dependencies
+# Note: The first installation will download PyTorch & sentence-transformers (~1-2 GB).
+pip install -r requirements.txt
+
+# 3. Configure Environment Variables
+cp .env.example .env
+```
+Open the `.env` file and set your `GROQ_API_KEY`:
+```ini
+GROQ_API_KEY=gsk_your_api_key_here
+```
+
+### 3. Run the Server
+
+Start the FastAPI application:
+```bash
+python run.py
+```
+View the interactive API documentation at: **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+
+---
+
+## 📡 API Reference & End-to-End Test
+
+You can test the application via the interactive Swagger UI (`/docs`) or using tools like Postman/cURL.
+
+### 1. Index a Repository
+`POST /index`
 ```json
 {
-  "repo_path": "C:/Users/payan/Desktop/Codebase Agent"
+  "repo_path": "/path/to/your/local/codebase"
+}
+```
+*Note: The first time you run this, it will download the HuggingFace embedding model (~130 MB). Indexing happens locally on your CPU.*
+
+### 2. Ask a Question
+`POST /ask`
+```json
+{
+  "question": "How does hybrid retrieval work in this project?"
 }
 ```
 
-The first index run downloads the embedding model (~130 MB). Indexing is **local** (no embedding API cost).
-
-**Step 2 — Ask a question** (`POST /ask`)
-
-```json
-{
-  "question": "How does repository indexing work in this project?"
-}
-```
-
-## Current API
-
-- `GET /health` → status, providers, model names
-- `POST /index` → parse, chunk, embed (HuggingFace), store in Chroma
-- `POST /ask` → **hybrid** retrieve (vector + BM25), answer via Groq
-- `POST /review` → AI code review (bugs, security, complexity, refactoring)
-
-### Code review example
-
+### 3. Run an AI Code Review
+`POST /review`
 ```json
 {
   "code": "def divide(a, b):\n    return a / b",
@@ -90,55 +113,35 @@ The first index run downloads the embedding model (~130 MB). Indexing is **local
   "context": "Utility function used in payment calculations"
 }
 ```
+*Returns structured issues containing category, severity, description, and actionable suggestions.*
 
-Returns structured `issues` with category, severity, title, description, and suggestions.
+### 4. Health Check
+`GET /health` -> Returns system status, loaded providers, and model configurations.
 
-## Hybrid retrieval (vector + BM25)
+---
 
-| Method | Good at |
-|--------|---------|
-| **Vector** | Semantic similarity (“how is auth handled?”) |
-| **BM25** | Exact tokens (`get_settings`, `POST /index`, class names) |
-| **Fusion** | Combines both ranked lists into one top-k set |
+## 🔧 Configuration (.env)
 
-Config in `.env`:
+The hybrid retrieval behavior can be adjusted in your `.env` file:
+- `VECTOR_TOP_K`: Number of candidates vector search returns before fusion.
+- `BM25_TOP_K`: Number of candidates keyword search returns before fusion.
+- `RETRIEVAL_TOP_K`: Final number of chunks passed to the LLM.
+- `HYBRID_FUSION_MODE`: Currently supports `reciprocal_rerank` (RRF).
 
-- `VECTOR_TOP_K` / `BM25_TOP_K` — how many candidates each method returns before fusion
-- `RETRIEVAL_TOP_K` — final chunk count sent to Groq
-- `HYBRID_FUSION_MODE=reciprocal_rerank` — standard RRF fusion
+*Important: If you change embedding models or enable hybrid retrieval for the first time, delete the `data/` directory and re-run `POST /index`.*
 
-After this change, **re-run `POST /index`** so the docstore (`data/storage/`) is created for BM25.
+## 🐛 Troubleshooting
 
-## Why `app/core/providers.py` exists
+| Issue | Solution |
+|-------|----------|
+| **`503` GROQ_API_KEY missing** | Ensure you copied `.env.example` to `.env` and added your key. Restart the server. |
+| **Slow first `POST /index`** | This is normal! HuggingFace is downloading the embedding model. Use a small repo for your first test. |
+| **`401` Invalid Groq key** | Verify or regenerate your key at the Groq Console. |
+| **`429` Groq rate limit** | Wait 30-60 seconds, or use a smaller repository / lower `RETRIEVAL_TOP_K`. |
+| **Out of Memory on Indexing** | Ensure `EMBEDDING_DEVICE=cpu` is set in your `.env`. |
 
-Single place to swap models later:
+## 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
 
-- `configure_embedding_model()` → HuggingFace on CPU
-- `create_llm()` → Groq chat model
-
-## Important: re-index after provider change
-
-If you change embedding models or enable hybrid retrieval for the first time, delete `data/chroma/` and `data/storage/`, then run `POST /index` again.
-
-## Troubleshooting
-
-### `503` — GROQ_API_KEY missing
-
-Copy `.env.example` to `.env`, set a real Groq key, restart the server.  
-`GET /health` should show `"configured": true`.
-
-### Slow first `POST /index`
-
-Normal. HuggingFace downloads the model and embeds every chunk on CPU. Use a small repo for testing.
-
-### `401` — Invalid Groq key
-
-Regenerate at [console.groq.com/keys](https://console.groq.com/keys) and update `.env`.
-
-### `429` — Groq rate limit
-
-Wait 30–60 seconds or use a smaller repo / lower `RETRIEVAL_TOP_K`.
-
-### Out of memory during embedding
-
-Set `EMBEDDING_DEVICE=cpu` in `.env` (default). Avoid indexing huge repos on low-RAM machines.
+## 📝 License
+This project is [MIT](https://opensource.org/licenses/MIT) licensed.
