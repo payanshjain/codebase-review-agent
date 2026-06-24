@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+llama-index
+llama-index-embeddings-huggingface
+llama-index-llms-groq
+llama-index-vector-stores-chroma
+llama-index-retrievers-bm25
+chromadb
+sentence-transformers
+python-dotenv
+pydantic
+pydantic-settings
+tiktoken
+tree-sitter-language-pack
+
