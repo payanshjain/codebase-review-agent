@@ -1,0 +1,3 @@
+"""
+Architecture doc generator module.
+"""
