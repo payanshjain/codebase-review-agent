@@ -1,0 +1,1 @@
+"""Mermaid generator module."""
